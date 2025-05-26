@@ -41,7 +41,8 @@ class AuthController extends Controller
         }
 
         return redirect()->intended(route('login'))->withErrors([
-            'name' => 'Data is not match!'
+            'name' => 'Data is not match!',
+            'password' => 'Data is not match!'
         ])->onlyInput('name');
     }
 

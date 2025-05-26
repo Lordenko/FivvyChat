@@ -1,14 +1,23 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\IndexController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
-    Route::inertia('/', 'Chat/Chat')->name('home');
+    Route::get('/', [IndexController::class, 'home'])->name('home');
+    Route::get('/chat/{chat_id}', [IndexController::class, 'home']);
+
     Route::inertia('/about', 'About')->name('about');
 
     Route::delete('/logout', [AuthController::class, 'logout'])->name('logout');
+
+    Route::resource('chats', ChatController::class);
+    Route::resource('messages', MessageController::class);
 });
 
 Route::middleware('guest')->group(function () {
