@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageSent;
 use Illuminate\Http\Request;
 use App\Models\Message;
 
@@ -37,7 +38,14 @@ class MessageController extends Controller
             'user_id' => 'required|exists:users,id',
         ]);
 
-        Message::create($request->only('message_text', 'chat_id', 'user_id'));
+        $message = Message::create($request->only('message_text', 'chat_id', 'user_id'));
+
+        event(
+            new MessageSent(
+                $message,
+                $message->chat_id,
+            )
+        );
 
         return redirect()->back();
     }

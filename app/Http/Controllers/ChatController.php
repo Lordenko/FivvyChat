@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\Chat\MessageSent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Chat;
@@ -53,6 +54,8 @@ class ChatController extends Controller
         ]);
 
         $chat->users()->attach($request->user_ids); // масив ID
+
+
 
         return redirect()->intended(route('home'));
     }

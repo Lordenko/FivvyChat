@@ -1,30 +1,55 @@
 <script setup>
-import {ref, onMounted} from 'vue'
+import {ref, onMounted, nextTick} from 'vue'
 import AsideProfile from '../Components/AsideProfile.vue';
 import UserCard from '../Components/UserCard.vue';
 import Message from '../Components/Message.vue';
 import SendMessageInput from '../Components/Forms/SendMessageInput.vue';
 import {router, usePage} from '@inertiajs/vue3'
 
-const hash = ref('')
-
 const page = usePage()
 const current_user = page.props.auth.user
 
-const props = defineProps({
+const {chat_id, users, messages} = defineProps({
     chat_id: Number,
     users: Array,
     chats: Array,
     messages: {
         type: Array,
         default: null
-    }
+    },
+    errors: Object,
+    appName: String,
+    auth: Object
 })
+
+const messagesList = ref(messages)
+const messagesContainer = ref(null)
+
+function scrollToBottom() {
+    if (messagesContainer) {
+        nextTick(() => {
+            messagesContainer.value?.scrollTo({
+                top: messagesContainer.value.scrollHeight,
+                behavior: 'smooth'
+            })
+        })
+    }
+}
 
 const isAsideOpen = ref(false)
 
+window.Echo
+    .private('Chat.' + chat_id)
+    .listen('MessageSent', (e) => {
+        const message = e.message
+        messagesList.value.push(message)
+
+        scrollToBottom()
+    });
+
+
 function getUserName(id) {
-    return props.users.find(u => u.id === id)?.name ?? `User #${id}`
+    return users.find(u => u.id === id)?.name ?? `User #${id}`
 }
 
 function getChatName(chat) {
@@ -76,9 +101,9 @@ function formatTime(dateString) {
         </div>
 
         <div v-if="messages" class="h-screen flex flex-col">
-            <div class="flex-1 overflow-y-auto p-3 overflow-y-auto scrollbar-hidden">
+            <div ref="messagesContainer" class="flex-1 overflow-y-auto p-3 overflow-y-auto scrollbar-hidden">
                 <Message
-                    v-for="message in messages"
+                    v-for="message in messagesList"
                     :key="message.id"
                     :name="getUserName(message.user_id)"
                     :message_text="message.message_text"

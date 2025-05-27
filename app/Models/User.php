@@ -60,4 +60,8 @@ class User extends Authenticatable
     {
         return $this->chats()->with('users')->get();
     }
+
+    public function hasAccessToChat($chat_id) {
+        return $this->chats()->where('chat_id', $chat_id)->exists();
+    }
 }
