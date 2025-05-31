@@ -7,6 +7,7 @@ export default defineConfig({
     server: {
         host: '0.0.0.0',
         port: 5173,
+        cors: true,
         hmr: {
             host: '46.219.25.253', // або ваша локальна IP-адреса
         },
@@ -19,4 +20,9 @@ export default defineConfig({
         }),
         tailwindcss(),
     ],
+    optimizeDeps: {
+        include: [
+            'nprogress'
+        ]
+    },
 });

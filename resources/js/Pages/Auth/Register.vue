@@ -28,7 +28,7 @@ const submit = () => {
 
     <Head title="Register" />
 
-    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Sign Up</h2>
+    <h2 class="text-2xl font-bold text-purple-300 mb-6 text-center">Sign Up</h2>
 
     <form @submit.prevent="submit" class='space-y-4'>
         <TextInput name="Name" v-model="form.name" :message="form.errors.name" />
@@ -40,20 +40,24 @@ const submit = () => {
         <TextInput name="Repeat password" type="password" v-model="form.password_confirmation"
             :message="form.errors.password_confirmation" />
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between my-5">
             <CheckBox name="Agree to the community rules?" v-model="form.agree" />
-            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Сommunity rules</a>
+            <a href="#" class="text-sm text-purple-400 hover:text-purple-300">Community rules</a>
         </div>
         <p v-if="form.errors.agree" class="text-sm text-red-500 mt-1">{{ form.errors.agree }}</p>
 
-        <button :disabled="form.processing" :class="{'!bg-gray-400' : form.processing }"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+        <button
+            :disabled="form.processing"
+            :class="{ '!bg-zinc-600': form.processing }"
+            class="w-full bg-purple-800 hover:bg-purple-900 text-white font-medium py-2.5 rounded-lg transition-colors"
+        >
             Sign Up
         </button>
     </form>
 
-    <div class="mt-6 text-center text-sm text-gray-600">
+
+    <div class="mt-6 text-center text-sm text-zinc-400">
         Have account?
-        <Link :href="route('login')" class="text-indigo-600 hover:text-indigo-500 font-medium">Sign in</Link>
+        <Link :href="route('login')" class="text-purple-400 hover:text-purple-300 font-medium">Sign in</Link>
     </div>
 </template>

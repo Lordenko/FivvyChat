@@ -40,7 +40,7 @@ class AuthController extends Controller
             return redirect()->route('home');
         }
 
-        return redirect()->intended(route('login'))->withErrors([
+        return redirect()->back()->withErrors([
             'name' => 'Data is not match!',
             'password' => 'Data is not match!'
         ])->onlyInput('name');

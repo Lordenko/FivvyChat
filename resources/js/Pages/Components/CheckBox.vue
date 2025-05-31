@@ -18,7 +18,13 @@ defineProps({
 
 <template>
     <label class="flex items-center">
-        <input type="checkbox" v-model="modelValue" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-        <span class="select-none ml-2 text-sm text-gray-600">{{ name }}</span>
+        <input
+            type="checkbox"
+            v-model="modelValue"
+            class="appearance-none h-5 w-5 rounded border border-zinc-600 bg-zinc-800 checked:bg-purple-600 checked:border-purple-600 focus:ring-0 focus:outline-none transition duration-200"
+        />
+        <span class="select-none ml-2 text-sm text-purple-300">{{ name }}</span>
     </label>
+
+
 </template>

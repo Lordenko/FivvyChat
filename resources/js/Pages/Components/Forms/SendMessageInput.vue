@@ -1,7 +1,6 @@
 <script setup>
 
-import {useForm} from "@inertiajs/vue3";
-import {router, usePage} from '@inertiajs/vue3'
+import {useForm, router, usePage} from "@inertiajs/vue3";
 
 const props = defineProps({
     user_id: {
@@ -11,7 +10,8 @@ const props = defineProps({
     chat_id: {
         type: Number,
         required: true
-    }
+    },
+
 })
 
 const form = useForm({
@@ -23,21 +23,31 @@ const form = useForm({
 const submit = () => {
     form.post(route('messages.store'), {
         preserveScroll: true,
-        onSuccess: () => form.reset('message_text')
-    });
+        onBefore: visit => {
+            visit.data.skipProgress = true
+        },
+        onSuccess: () => {
+            form.reset('message_text')
+        }
+    })
 }
+
 
 </script>
 
 <template>
-    <div class="bg-sky-500 flex flex-row items-center ">
-        <form @submit.prevent="submit" class="w-full h-[50px] flex flex-row px-1">
-            <input v-model="form.message_text" class="bg-sky-900 w-full h-[50px] p-2 rounded-2xl border" type="text"
+    <div class="flex flex-row items-center bg-zinc-800">
+        <form @submit.prevent="submit" class="border-t border-zinc-700 w-full h-[60px] flex flex-row items-center p-2">
+            <input v-model="form.message_text" class="bg-zinc-900 border-zinc-700 text-purple-300 w-full h-[50px] p-2 rounded-2xl border focus:outline-none focus:ring-0" type="text"
                    placeholder="Enter a message...">
 
             <button
-                class="bg-sky-900 w-[50px] h-[50px] rounded-2xl border text-center ml-1 hover:cursor-pointer">➤
+                :disabled="form.processing || !form.message_text?.trim()"
+                class="hover:bg-purple-800 bg-purple-700 text-purple-300 border-zinc-700 w-[50px] h-[50px] rounded-2xl border text-center ml-1 hover:cursor-pointer">➤
             </button>
         </form>
     </div>
+
+
+
 </template>

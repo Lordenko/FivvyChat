@@ -15,22 +15,33 @@ defineProps({
     upload_time: {
         type: String,
         required: true
+    },
+    my_message: {
+        type: Boolean,
+        required: true
     }
-
 })
 </script>
 
 <template>
-    <div class="flex flex-row flex-end items-end mb-1">
-        <img class="w-10 h-10 rounded-full mr-2" :src="avatar_path" alt="User Avatar">
+    <div class="flex flex-row items-end mb-4 max-w-[450px] w-full">
+        <img class="select-none w-10 h-10 rounded-full mr-2 shrink-0 border border-purple-900" :src="avatar_path"
+             alt="User Avatar"
+        />
 
-        <div class="min-w-100 flex flex-col bg-blue-400 p-2 rounded-xl">
-            <p class="text-gray-500 text-xs">{{ name }}</p>
-            <div class="flex flex-row items-center">
-                <p>{{ message_text }}</p>
-            </div>
-            <div class="w-full flex flex-row-reverse ">
-                <p class="text-gray-500 text-xs">{{ upload_time }}</p>
+        <div class="flex flex-col  p-3 rounded-xl w-full max-w-full overflow-hidden text-white border"
+             :class="my_message ? 'bg-purple-800 border-purple-800' : 'bg-zinc-800 border-zinc-800'"
+        >
+            <p class="select-none text-xs mb-1"
+               :class="my_message ? 'text-purple-300 ' : 'text-purple-400 '"
+            >{{ name }}</p>
+            <p class="text-sm break-words whitespace-pre-wrap w-full overflow-hidden">
+                {{ message_text }}
+            </p>
+            <div class="select-none w-full flex flex-row-reverse mt-1">
+                <p class="text-xs"
+                   :class="my_message ? 'text-purple-400' : 'text-purple-500'"
+                >{{ upload_time }}</p>
             </div>
         </div>
     </div>

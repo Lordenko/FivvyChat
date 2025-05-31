@@ -1,8 +1,8 @@
 <script setup>
-import { ref } from 'vue'
-import { router } from '@inertiajs/vue3'
+import {ref} from 'vue'
+import {router} from '@inertiajs/vue3'
 
-const { disabled } = defineProps({ disabled: Boolean })
+const {disabled} = defineProps({disabled: Boolean})
 
 const isProcessing = ref(false)
 
@@ -17,12 +17,16 @@ const logout = () => {
 </script>
 
 <template>
-    <button @click="logout" :disabled="isProcessing || disabled"
-        class="w-full select-none py-4 rounded-[20px] bg-black text-white flex items-center justify-center border transition"
+    <button
+        @click="logout"
+        :disabled="isProcessing || disabled"
+        class="w-full bg-zinc-800 select-none py-4 rounded-[20px] text-white flex items-center justify-center border border-zinc-700 transition"
         :class="{
-            'hover:cursor-pointer hover:bg-gray-900': !(isProcessing || disabled),
-            '!bg-gray-400': isProcessing
-        }">
+      'hover:bg-purple-700 hover:cursor-pointer': !(isProcessing || disabled),
+      '!bg-zinc-800 text-zinc-400': isProcessing
+    }"
+    >
         {{ isProcessing ? 'Logging out...' : 'Logout' }}
     </button>
 </template>
+

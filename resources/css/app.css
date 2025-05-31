@@ -1,10 +1,31 @@
 @import "tailwindcss";
 @source "../views";
 
+@font-face {
+    font-family: 'InterVariable';
+    src: url('../fonts/InterVariable.ttf') format('truetype');
+}
+
+* {
+    font-family: 'InterVariable', serif;
+}
+
 .scrollbar-hidden {
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* IE/Edge */
 }
 .scrollbar-hidden::-webkit-scrollbar {
     display: none; /* Chrome/Safari */
+}
+
+/* Колір лінії */
+#nprogress .bar {
+    background: #9000bc;
+    height: 4px; /* товщина */
+}
+
+/* Фон спінера (якщо showSpinner: true) */
+#nprogress .spinner-icon {
+    border-top-color: #9000bc;
+    border-left-color: #9000bc;
 }

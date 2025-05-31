@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Events\Chat\MessageSent;
+use App\Events\ChatCreate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Chat;
 use App\Models\User;
 use App\Http\Requests\StoreChatRequest;
+use Inertia\Inertia;
 
 class ChatController extends Controller
 {
@@ -48,17 +50,32 @@ class ChatController extends Controller
     public function store(StoreChatRequest $request)
     {
         $data = $request->validated();
+        $user_ids = collect($request->user_ids)->sort()->values();
+
+        $existingChat = Chat::where('type', 'direct')
+            ->whereHas('users', function ($q) use ($user_ids) {
+                $q->whereIn('users.id', $user_ids);
+            }, '=', $user_ids->count())
+            ->withCount('users')
+            ->get()
+            ->firstWhere('users_count', $user_ids->count());
+
+        if ($existingChat) {
+            return redirect()->route('chat.show', $existingChat);
+        }
 
         $chat = Chat::create([
             'type' => $data['type'],
         ]);
+        $chat->users()->attach($user_ids);
 
-        $chat->users()->attach($request->user_ids); // масив ID
+        foreach ($chat->users as $user) {
+            event(new ChatCreate($chat, $user));
+        }
 
-
-
-        return redirect()->intended(route('home'));
+        return redirect()->route('chat.show', $chat->id);
     }
+
 
     /**
      * Display the specified resource.

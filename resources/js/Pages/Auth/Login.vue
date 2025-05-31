@@ -25,7 +25,7 @@ const submit = () => {
 
     <Head title="Login" />
 
-    <h2 class="text-2xl font-bold text-gray-900 mb-6 text-center">Sign In</h2>
+    <h2 class="text-2xl font-bold text-purple-300 mb-6 text-center">Sign In</h2>
 
     <form @submit.prevent="submit" class='space-y-4'>
 
@@ -33,19 +33,24 @@ const submit = () => {
 
         <TextInput name="Password" type="password" v-model="form.password" :message="form.errors.password" />
 
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between my-5">
             <CheckBox name="Remember me?" v-model="form.remember" />
-            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-500">Forgot password?</a>
+            <a href="#" class="text-sm text-purple-400 hover:text-purple-300">Forgot password?</a>
         </div>
 
-        <button :disabled="form.processing" :class="{ '!bg-gray-400': form.processing }"
-            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 rounded-lg transition-colors">
+
+        <button
+            :disabled="form.processing"
+            :class="{ '!bg-zinc-600': form.processing }"
+            class="w-full bg-purple-800 hover:bg-purple-900 text-white font-medium py-2.5 rounded-lg transition-colors"
+        >
             Sign In
         </button>
     </form>
 
-    <div class="mt-6 text-center text-sm text-gray-600">
+
+    <div class="mt-6 text-center text-sm text-zinc-400">
         Don't have an account?
-        <Link :href="route('register')" class="text-indigo-600 hover:text-indigo-500 font-medium">Sign up</Link>
+        <Link :href="route('register')" class="text-purple-400 hover:text-purple-300 font-medium">Sign up</Link>
     </div>
 </template>

@@ -3,6 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Events\MessageSent;
+use App\Models\Chat;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\Message;
 
@@ -40,12 +42,33 @@ class MessageController extends Controller
 
         $message = Message::create($request->only('message_text', 'chat_id', 'user_id'));
 
-        event(
-            new MessageSent(
-                $message,
-                $message->chat_id,
-            )
-        );
+
+
+        $notification = Notification::create([
+            'chat_id' => $message->chat_id,
+            'message' => $message->message_text,
+        ]);
+
+        $chatUsers = $message->chat->users;
+
+        foreach ($chatUsers as $user) {
+            if ($user->id !== $message->user_id) {
+                $notification->recipients()->attach($user->id);
+            }
+        }
+
+        $chat = Chat::find($message->chat_id);
+        $chat->last_message = $message->message_text;
+        $chat->save();
+
+        $notification->load('recipients');
+
+        event(new MessageSent(
+            $notification,
+            $message,
+            $message->chat_id,
+        ));
+
 
         return redirect()->back();
     }

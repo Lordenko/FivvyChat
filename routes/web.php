@@ -10,13 +10,13 @@ use Inertia\Inertia;
 
 Route::middleware('auth')->group(function () {
     Route::get('/', [IndexController::class, 'home'])->name('home');
-    Route::get('/chat/{chat_id}', [IndexController::class, 'home']);
+    Route::get('/chat/{chat_id}', [IndexController::class, 'home'])->name('chat.show');
 
     Route::inertia('/about', 'About')->name('about');
 
     Route::delete('/logout', [AuthController::class, 'logout'])->name('logout');
 
-    Route::resource('chats', ChatController::class);
+    Route::resource('chats', ChatController::class)->except(['show']);
     Route::resource('messages', MessageController::class);
 });
 
