@@ -1,15 +1,16 @@
 <script setup>
 import {ref, onMounted, onUnmounted, nextTick, watch, watchEffect} from 'vue'
 import {router, usePage, useRemember} from '@inertiajs/vue3'
-import AsideProfile from '../Components/AsideProfile.vue'
-import ChatCard from './Components/ChatCard.vue'
-import UserCard from './Components/UserCard.vue'
-import Message from '../Components/Message.vue'
-import SendMessageInput from '../Components/Forms/SendMessageInput.vue'
-import LogoutButton from "@/Pages/Components/LogoutButton.vue";
+import ChatCard from './Components/Cards/ChatCard.vue'
+import UserCard from './Components/Cards/UserCard.vue'
+import Message from './Components/Message.vue'
+import SendMessageInput from './Components/Forms/SendMessageInput.vue'
+import LogoutButton from "./Components/Buttons/LogoutButton.vue";
+import ProfileButton from "./Components/Buttons/ProfileButton.vue";
+import Profile from './Profile.vue'
 
-const page = usePage()
-const current_user = page.props.auth.user
+
+const current_user = ref(usePage().props.auth.user)
 
 const props = defineProps({
     avatar_path: {type: String, default: '/images/default_pfp.jpg'},
@@ -23,7 +24,9 @@ const props = defineProps({
     auth: Object,
 })
 
-const notificationsList = ref(Array.isArray(props.notifications) ? props.notifications : [])
+const isOpenProfile = ref(false)
+
+const notificationsList = ref([...props.notifications ?? []])
 const messagesList = ref([...props.messages ?? []])
 const chatsList = ref(props.chats)
 const messagesContainer = ref(null)
@@ -33,13 +36,22 @@ const isMobile = ref(false)
 const searchButtonActivity = ref(false)
 const searchButtonText = ref('')
 let searchUserList = ref([])
-const refreshKey = ref(0)
 
 
 const getUserName = id => props.users.find(u => u.id === id)?.name ?? `User #${id}`
+
+const getUserAvatarPath = id => {
+    const user = props.users.find(u => u.id === id)
+    return user?.avatar_path ? `/storage/${user.avatar_path}` : '/images/default_pfp.jpg'
+}
+
 const getChatName = chat => chat.type === 'direct'
-    ? chat.users.find(user => user.id !== current_user.id)?.name
+    ? chat.users.find(user => user.id !== current_user.value.id)?.name
     : chat.name
+
+const getAvatarGroup = chat => chat.type === 'direct'
+    ? chat.users.find(user => user.id !== current_user.value.id)?.avatar_path
+    : chat.avatar_path
 
 const formatTime = dateString => {
     const date = new Date(dateString)
@@ -71,12 +83,6 @@ const findUsersByName = (users, partialName) => {
     return users.filter(user => user.name.toLowerCase().includes(query))
 }
 
-const getAmountNotifications = (chat_id) => {
-    return notificationsList.value.filter(
-        n => n.chat_id === chat_id && n.pivot?.is_read === 0
-    ).length;
-};
-
 watch(searchButtonText, (newValue) => {
     searchUserList.value = newValue ? findUsersByName(props.users, newValue) : []
 })
@@ -94,12 +100,18 @@ onMounted(() => {
     if (props.chat_id != null) {
         window.Echo.private(`Chat.${props.chat_id}`)
             .listen('MessageSent', e => {
-                messagesList.value.push(e.message)
+                messagesList.value = [...messagesList.value, e.message]
 
-                notificationsList.value = notificationsList.value.some(n => n.id === e.notification.id)
-                    ? notificationsList.value.map(n => n.id === e.notification.id ? { ...e.notification } : n)
-                    : [...notificationsList.value, e.notification]
-
+                if (e.message.user_id !== current_user.value.id) {
+                    if (props.chat_id === e.message.chat_id) {
+                        axios.post('/notifications/read', {
+                            chat_id: e.message.chat_id
+                        })
+                    } else {
+                        console.log(e.notification)
+                        notificationsList.value.push(e.notification)
+                    }
+                }
                 scrollToBottom('smooth')
 
                 const chatIndex = chatsList.value.findIndex(chat => chat.id === props.chat_id)
@@ -111,35 +123,79 @@ onMounted(() => {
                 }
             })
 
+        notificationsList.value = notificationsList.value.filter(
+            n => n.chat_id !== props.chat_id
+        );
     }
 
-    window.Echo.private(`NewChat.${current_user.id}`)
+    window.Echo.private(`NewChat.${current_user.value.id}`)
         .listen('ChatCreate', e => {
-            setTimeout(() => chatsList.value.push(e.chat), 250)
+            chatsList.value = [...chatsList.value, e.chat]
+
             searchButtonActivity.value = false
             searchButtonText.value = null
+        })
+
+    window.Echo.private(`Notification.${current_user.value.id}`)
+        .listen('NotificationSent', e => {
+            notificationsList.value.push(e.notification)
+
+            const chatIndex = chatsList.value.findIndex(chat => chat.id === e.message.chat_id)
+            if (chatIndex !== -1) {
+                chatsList.value[chatIndex] = {
+                    ...chatsList.value[chatIndex],
+                    last_message: e.message.message_text
+                }
+            }
+        })
+
+    window.Echo.private(`ProfileChangeChannel.${current_user.value.id}`)
+        .listen('ProfileChange', e => {
+            current_user.value = usePage().props.auth?.user
+
         })
 })
 
 onUnmounted(() => window.removeEventListener('resize', handleResize))
 
+const settingsRef = ref(null)
+const settingsButtonRef = ref(null)
 
+const handleClickOutside = (event) => {
+    const clickedOutsideSettings = settingsRef.value && !settingsRef.value.contains(event.target)
+    const clickedOutsideButton = settingsButtonRef.value && !settingsButtonRef.value.contains(event.target)
 
+    if (isSettingsOpen.value && clickedOutsideSettings && clickedOutsideButton) {
+        isSettingsOpen.value = false
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleClickOutside)
+})
 
 </script>
 
 <template>
     <Head title="Chat"/>
+
+
+    <Profile v-if="isOpenProfile" v-model:user="current_user" v-model:isOpen="isOpenProfile"/>
+
     <div :class="['relative h-screen bg-zinc-900', isMobile ? 'block' : 'grid md:grid-cols-[300px_1fr]']">
 
         <button v-if="isMobile" @click="toggleChatMenu"
-                class="md:hidden fixed top-2 left-2 z-50 bg-purple-700 text-white px-3 py-1 rounded shadow-lg">
+                class="md:hidden fixed top-2 left-2 z-20 bg-purple-700 text-white px-3 py-1 rounded shadow-lg">
             ☰
         </button>
 
         <div :class="[
       'bg-zinc-800 border-r border-zinc-700 flex flex-col transition-transform duration-300',
-      isChatMenuOpen ? 'fixed inset-0 z-50 w-full h-screen overflow-y-auto' : 'hidden',
+      isChatMenuOpen ? 'fixed inset-0 z-38 w-full h-screen overflow-y-auto' : 'hidden',
       'md:static md:flex md:w-[300px] md:h-screen relative'
     ]">
 
@@ -153,7 +209,7 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
                     v-model="searchButtonText"
                     @focus="searchButtonActivity = true"
                     class="w-full border-zinc-700 text-purple-300 bg-zinc-900 h-10 py-2 px-3 leading-5 border rounded-2xl focus:outline-none focus:ring-0"
-                    placeholder="Enter a username for search him..."
+                    placeholder="Enter a username for search him"
                 />
             </div>
 
@@ -168,25 +224,30 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
                     </div>
                 </div>
                 <div v-else>
-                    <div v-for="chat in chatsList" :key="chat.id">
-                        <ChatCard
-                            :name="getChatName(chat)"
-                            :href_chat_id="`/chat/${chat.id}`"
-                            :isAsideOpen="!isChatMenuOpen"
-                            :is_active_chat="chat.id === props.chat_id"
-                            :last_message="chat.last_message"
-                            :chat_id="chat.id"
-                            :notifications="notificationsList"
-                        />
-                    </div>
+                    <ChatCard
+                        v-for="chat in chatsList" :key="chat.id"
+                        @click="() => { console.log(chat.last_message) }"
+                        :name="getChatName(chat)"
+                        :href_chat_id="`/chat/${chat.id}`"
+                        :avatar_path="getAvatarGroup(chat)"
+                        :isAsideOpen="!isChatMenuOpen"
+                        :is_active_chat="chat.id === props.chat_id"
+                        :last_message="chat.last_message"
+                        :chat_id="chat.id"
+                        :notifications="notificationsList"
+                    />
                 </div>
             </div>
 
             <div class="relative select-none">
-                <div @click="toggleSettings"
-                     class="flex-shrink-0 flex items-center justify-between px-4 py-3 text-zinc-400 text-sm border-t border-zinc-700 hover:bg-zinc-700/50 cursor-pointer transition">
+                <!-- Кнопка ⚙️ -->
+                <div
+                    @click="toggleSettings"
+                    ref="settingsButtonRef"
+                    class="flex-shrink-0 flex items-center justify-between px-4 py-4 h-[60px] text-zinc-400 text-sm border-t border-zinc-700 hover:bg-zinc-700/50 cursor-pointer transition"
+                >
                     <div class="flex items-center gap-2">
-                        <img :src="props.avatar_path" alt="Avatar" class="w-6 h-6 rounded-full select-none"/>
+                        <img :src="`/storage/${current_user.avatar_path}`" alt="Avatar" class="w-6 h-6 rounded-full select-none"/>
                         <p class="font-medium text-white truncate max-w-[120px]">{{ current_user.name }}</p>
                     </div>
                     <div class="text-xl transform transition-transform duration-200"
@@ -194,17 +255,24 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
                         ⚙️
                     </div>
                 </div>
+
+                <!-- Випадаюче меню -->
                 <Transition name="fade" class="select-none">
-                    <div v-if="isSettingsOpen"
-                         class="absolute bottom-full mb-2 left-2 right-2 bg-zinc-900 border border-zinc-700 px-4 py-3 text-sm text-white shadow-xl rounded-lg">
-                        <p class="mb-2">👤 Профіль</p>
-                        <p class="mb-2">🔒 Змінити пароль</p>
-                        <p class="mb-2">🌙 Темна тема</p>
+                    <div
+                        v-if="isSettingsOpen"
+                        ref="settingsRef"
+                        class="absolute bottom-full mb-2 left-2 right-2 bg-zinc-900 border border-zinc-700 px-4 py-3 text-sm text-white shadow-xl rounded-lg"
+                    >
+                        <p class="mb-2">
+                            <ProfileButton @click="() => { isOpenProfile = true; isSettingsOpen = false }"/>
+                        </p>
                         <p class="hover:text-red-400 cursor-pointer">
                             <LogoutButton/>
                         </p>
                     </div>
                 </Transition>
+
+
             </div>
         </div>
 
@@ -214,6 +282,7 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
                 <Message
                     v-for="message in messagesList"
                     :key="message.id"
+                    :avatar_path="getUserAvatarPath(message.user_id)"
                     :name="getUserName(message.user_id)"
                     :message_text="message.message_text"
                     :upload_time="formatTime(message.created_at)"
@@ -222,7 +291,7 @@ onUnmounted(() => window.removeEventListener('resize', handleResize))
                 />
             </div>
 
-            <div v-else-if="messagesList" class="flex flex-1 flex-col p-3 full justify-center items-center">
+            <div v-else-if="messagesList && isChatMenuOpen" class="flex flex-1 flex-col p-3 full justify-center items-center">
                 <p class="text-4xl text-purple-300">Send your first message</p>
             </div>
 

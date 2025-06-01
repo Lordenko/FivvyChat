@@ -13,7 +13,7 @@ class AuthController extends Controller
         sleep(1);
 
         $fields = $request->validate([
-            'name' => ['required', 'max:255'],
+            'name' => ['required', 'max:255', 'unique:users'],
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', 'min:5'],
             'agree' => ['accepted']

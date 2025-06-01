@@ -2,7 +2,7 @@
 
 import { useForm } from '@inertiajs/vue3'
 import TextInput from '../Components/TextInput.vue';
-import CheckBox from '../Components/CheckBox.vue';
+import CheckBox from './Components/CheckBox.vue';
 import AuthLayout from '../../Layouts/AuthLayout.vue';
 
 defineOptions({

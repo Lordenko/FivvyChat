@@ -1,7 +1,7 @@
 <script setup>
 import {ref} from 'vue'
-import LogoutButton from '../Components/LogoutButton.vue';
-import HamburgerButton from '../Components/HamburgerButton.vue';
+import LogoutButton from '../Chat/Components/Buttons/LogoutButton.vue';
+import HamburgerButton from '../Chat/Components/Buttons/HamburgerButton.vue';
 import {usePage} from '@inertiajs/vue3'
 
 const page = usePage()

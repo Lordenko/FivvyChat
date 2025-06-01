@@ -25,7 +25,7 @@ defineProps({
 
 <template>
     <div class="flex flex-row items-end mb-4 max-w-[450px] w-full">
-        <img class="select-none w-10 h-10 rounded-full mr-2 shrink-0 border border-purple-900" :src="avatar_path"
+        <img class="select-none w-10 h-10 rounded-full mr-2 shrink-0 border object-cover border-purple-900" :src="avatar_path"
              alt="User Avatar"
         />
 
