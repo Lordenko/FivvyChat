@@ -26,7 +26,7 @@ const logout = () => {
       '!bg-zinc-800 text-zinc-400': isProcessing
     }"
     >
-        {{ isProcessing ? 'Logging out...' : 'Logout' }}
+        {{ isProcessing ? 'Вихід з акаунту...' : 'Вийти з акаунту' }}
     </button>
 </template>
 

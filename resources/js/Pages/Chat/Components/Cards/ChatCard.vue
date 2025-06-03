@@ -1,9 +1,10 @@
 <script setup>
 import {computed} from 'vue'
-import {Link} from '@inertiajs/vue3'
+import {Link, router} from '@inertiajs/vue3'
 
 const props = defineProps({
     chat_id: Number,
+    current_chat_id: Number,
     opened_id: Number,
     opened_type: String,
     menu_position: Object,
@@ -13,6 +14,7 @@ const props = defineProps({
     href_chat_id: String,
     is_active_chat: Boolean,
     notifications: Array,
+    is_online: Boolean,
 })
 
 const emit = defineEmits(['open', 'close'])
@@ -29,6 +31,17 @@ const handleRightClick = (e) => {
     emit('open', props.chat_id, {x: e.clientX, y: e.clientY})
 
 }
+
+const closeChat = () => {
+    console.log('test')
+    router.visit(route('home'))
+}
+
+const deleteChat = () => {
+    emit('close', props.chat_id)
+    router.delete(`/chats/${props.chat_id}`)
+}
+
 </script>
 
 <template>
@@ -41,7 +54,16 @@ const handleRightClick = (e) => {
               '!bg-purple-800': is_active_chat
             }"
         >
-            <img :src="`/storage/${avatar_path}`" alt="User Avatar" class="w-15 rounded-full"/>
+            <div class="relative w-[60px] h-[60px]">
+                <img :src="`/storage/${avatar_path}`" alt="User Avatar" class="w-full h-full rounded-full object-cover" />
+
+                <span
+                    v-if="is_online"
+                    class="absolute bottom-0 right-0 w-[14px] h-[14px] bg-green-500 border-[2px] border-zinc-800 rounded-full"
+                ></span>
+            </div>
+
+
             <div class="ml-3 w-0 flex-1 relative">
                 <span
                     v-if="getAmountNotifications(props.chat_id) > 0"
@@ -52,7 +74,7 @@ const handleRightClick = (e) => {
 
                 <p class="text-[20px] text-white mb-1">{{ name }}</p>
                 <p class="text-[15px] text-gray-300 truncate w-full block">
-                    {{ last_message ?? "No messages" }}
+                    {{ last_message ?? "Немає повідомлень" }}
                 </p>
             </div>
         </Link>
@@ -63,8 +85,8 @@ const handleRightClick = (e) => {
             :style="{ top: menu_position.y + 'px', left: menu_position.x + 'px' }"
         >
 
-            <button class="w-full text-left px-4 py-2 hover:bg-zinc-800">Rename</button>
-            <button class="w-full text-left px-4 py-2 hover:bg-zinc-800 text-red-400">Delete</button>
+            <button v-if="current_chat_id === chat_id" @click="closeChat" class="w-full text-left px-4 py-2 hover:bg-zinc-800">Закрити чат</button>
+            <button @click="deleteChat" class="w-full text-left px-4 py-2 hover:bg-zinc-800 text-red-400">Видалити чат</button>
         </div>
     </div>
 </template>

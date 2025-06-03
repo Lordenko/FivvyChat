@@ -89,20 +89,20 @@ const submitPassword = () => {
         <div class="bg-zinc-900 text-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-zinc-700 max-h-[90vh] scrollbar-hidden overflow-y-auto">
             <slot />
 
-            <!-- User Info -->
+            <!-- Інформація про користувача -->
             <div class="flex items-center space-x-3 mb-5">
                 <img
                     :src="user.avatar_path ? `/storage/${user.avatar_path}` : '/images/default_pfp.jpg'"
-                    alt="User avatar"
+                    alt="Аватар користувача"
                     class="size-14 rounded-full object-cover border-2 border-purple-500 shadow-lg transition-transform duration-300 hover:scale-105"
                 />
                 <div class="text-lg font-semibold text-purple-300 truncate">{{ user.name }}</div>
             </div>
 
-            <!-- Avatar Upload -->
+            <!-- Завантаження аватара -->
             <form @submit.prevent="submitAvatar" class="space-y-2 mb-5" enctype="multipart/form-data">
-                <div class="text-base font-medium text-purple-300">🖼️ Change your avatar</div>
-                <label class="block text-sm text-zinc-400">Upload new avatar (PNG, JPG)</label>
+                <div class="text-base font-medium text-purple-300">🖼️ Змінити аватар</div>
+                <label class="block text-sm text-zinc-400">Завантажити новий аватар (PNG, JPG)</label>
                 <input
                     ref="avatarInput"
                     type="file"
@@ -117,14 +117,14 @@ const submitPassword = () => {
                 <button
                     type="submit"
                     class="w-full py-2 bg-purple-700 hover:bg-purple-800 rounded text-white font-semibold transition">
-                    Upload Avatar
+                    Завантажити
                 </button>
             </form>
 
-            <!-- Nickname -->
-            <form @submit.prevent="submitNickname" class="space-y-2 mb-5" >
-                <div class="text-base font-medium text-purple-300">🔤 Change your nickname</div>
-                <label class="block text-sm text-zinc-400">Enter a new nickname</label>
+            <!-- Нікнейм -->
+            <form @submit.prevent="submitNickname" class="space-y-2 mb-5">
+                <div class="text-base font-medium text-purple-300">🔤 Змінити нікнейм</div>
+                <label class="block text-sm text-zinc-400">Введіть новий нікнейм</label>
                 <input
                     v-model="nicknameForm.name"
                     type="text"
@@ -133,15 +133,15 @@ const submitPassword = () => {
                 <button
                     type="submit"
                     class="w-full py-2 bg-purple-700 hover:bg-purple-800 rounded text-white font-semibold transition">
-                    Change!
+                    Змінити
                 </button>
             </form>
 
-            <!-- Password -->
+            <!-- Пароль -->
             <form @submit.prevent="submitPassword" class="space-y-2">
-                <div class="text-base font-medium text-purple-300">🔒 Change your password</div>
+                <div class="text-base font-medium text-purple-300">🔒 Змінити пароль</div>
 
-                <!-- hidden username input for browser autocomplete -->
+                <!-- приховане поле для автозаповнення -->
                 <input
                     type="text"
                     name="name"
@@ -150,7 +150,7 @@ const submitPassword = () => {
                     class="hidden"
                 />
 
-                <label class="block text-sm text-zinc-400">Enter previous password</label>
+                <label class="block text-sm text-zinc-400">Введіть старий пароль</label>
                 <input
                     v-model="passwordForm.current_password"
                     type="password"
@@ -158,7 +158,7 @@ const submitPassword = () => {
                     autocomplete="current-password" />
                 <p v-if="passwordForm.errors.current_password" class="text-sm text-red-400">{{ passwordForm.errors.current_password }}</p>
 
-                <label class="block text-sm text-zinc-400">Enter new password</label>
+                <label class="block text-sm text-zinc-400">Введіть новий пароль</label>
                 <input
                     v-model="passwordForm.new_password"
                     type="password"
@@ -166,7 +166,7 @@ const submitPassword = () => {
                     autocomplete="new-password" />
                 <p v-if="passwordForm.errors.new_password" class="text-sm text-red-400">{{ passwordForm.errors.new_password }}</p>
 
-                <label class="block text-sm text-zinc-400">Confirm new password</label>
+                <label class="block text-sm text-zinc-400">Підтвердіть новий пароль</label>
                 <input
                     v-model="passwordForm.confirm_password"
                     type="password"
@@ -177,7 +177,7 @@ const submitPassword = () => {
                 <button
                     type="submit"
                     class="w-full py-2 bg-purple-700 hover:bg-purple-800 rounded text-white font-semibold transition">
-                    Change!
+                    Змінити
                 </button>
             </form>
 

@@ -8,7 +8,9 @@ import SendMessageInput from './Components/Forms/SendMessageInput.vue'
 import LogoutButton from "./Components/Buttons/LogoutButton.vue";
 import ProfileButton from "./Components/Buttons/ProfileButton.vue";
 import Profile from './Profile.vue'
+import { useOnlineStore } from '@/Stores/useOnlineStore'
 
+const onlineStore = useOnlineStore()
 
 const current_user = ref(usePage().props.auth.user)
 
@@ -35,8 +37,10 @@ const isChatMenuOpen = ref(false)
 const isMobile = ref(false)
 const searchButtonActivity = ref(false)
 const searchButtonText = ref('')
+const usersOnline = ref([])
 let searchUserList = ref([])
-
+const onlineMap = ref({})
+const leaveTimeouts = {}
 
 const getUserName = id => props.users.find(u => u.id === id)?.name ?? `User #${id}`
 
@@ -52,6 +56,17 @@ const getChatName = chat => chat.type === 'direct'
 const getAvatarGroup = chat => chat.type === 'direct'
     ? chat.users.find(user => user.id !== current_user.value.id)?.avatar_path
     : chat.avatar_path
+
+const getDirectChatUserId = chat => chat.type === 'direct'
+    ? chat.users.find(user => user.id !== current_user.value.id)?.id
+    : -1
+
+const getDirectChatIsOnline = chat => {
+    const directUserId = getDirectChatUserId(chat)
+    return onlineStore.isOnline(directUserId)
+}
+
+console.log(usersOnline.value)
 
 const formatTime = dateString => {
     const date = new Date(dateString)
@@ -95,38 +110,11 @@ onMounted(() => {
     handleResize()
     window.addEventListener('resize', handleResize)
 
-    if (messagesList) scrollToBottom('auto')
-
     if (props.chat_id != null) {
-        window.Echo.private(`Chat.${props.chat_id}`)
-            .listen('MessageSent', e => {
-                messagesList.value = [...messagesList.value, e.message]
-
-                if (e.message.user_id !== current_user.value.id) {
-                    if (props.chat_id === e.message.chat_id) {
-                        axios.post('/notifications/read', {
-                            chat_id: e.message.chat_id
-                        })
-                    } else {
-                        console.log(e.notification)
-                        notificationsList.value.push(e.notification)
-                    }
-                }
-                scrollToBottom('smooth')
-
-                const chatIndex = chatsList.value.findIndex(chat => chat.id === props.chat_id)
-                if (chatIndex !== -1) {
-                    chatsList.value[chatIndex] = {
-                        ...chatsList.value[chatIndex],
-                        last_message: e.message.message_text
-                    }
-                }
-            })
-
-        notificationsList.value = notificationsList.value.filter(
-            n => n.chat_id !== props.chat_id
-        );
+        subscribeToChatChannels(props.chat_id)
     }
+
+    if (messagesList) scrollToBottom('auto')
 
     window.Echo.private(`NewChat.${current_user.value.id}`)
         .listen('ChatCreate', e => {
@@ -134,6 +122,16 @@ onMounted(() => {
 
             searchButtonActivity.value = false
             searchButtonText.value = null
+        })
+
+    window.Echo.private(`ChatDeleteChannel.${current_user.value.id}`)
+        .listen('ChatDelete', e => {
+            const index_chat =  chatsList.value.findIndex(item => item.id === e.chat.id)
+            chatsList.value.splice(index_chat, 1)
+
+            if (e.chat.id !== props.chat_id) {
+                router.visit(route('home'))
+            }
         })
 
     window.Echo.private(`Notification.${current_user.value.id}`)
@@ -157,18 +155,83 @@ onMounted(() => {
 
         })
 
-    window.Echo.private(`MessageDeleteChannel.${props.chat_id}`)
-        .listen('MessageDelete', e => {
-            const index_message = messagesList.value.findIndex(item => item.id === e.message_id)
-            messagesList.value.splice(index_message, 1)
+    window.Echo.join('Presence.users')
+        .here(users => {
+            users.forEach(user => {
+                onlineStore.setOnline(user.id)
+            })
+        })
+        .joining(user => {
+            onlineStore.setOnline(user.id)
+        })
+        .leaving(user => {
+            onlineStore.setOfflineWithDelay(user.id)
         })
 
-    window.Echo.private(`MessageEditChannel.${props.chat_id}`)
-        .listen('MessageEdit', e => {
-            const index_message = messagesList.value.findIndex(item => item.id === e.message.id)
-            messagesList.value[index_message].message_text = e.message.message_text
-        })
 })
+
+const isUserOnline = (userId) => !!onlineMap.value[userId]
+
+
+const subscribeToChatChannels = (chatId) => {
+    if (!chatId) return
+
+    // Підписка на повідомлення
+    window.Echo.private(`Chat.${chatId}`)
+        .listen('MessageSent', e => {
+            messagesList.value = [...messagesList.value, e.message]
+
+            if (e.message.user_id !== current_user.value.id) {
+                if (chatId === e.message.chat_id) {
+                    axios.post('/notifications/read', { chat_id: e.message.chat_id })
+                } else {
+                    notificationsList.value.push(e.notification)
+                }
+            }
+
+            scrollToBottom('smooth')
+
+            const chatIndex = chatsList.value.findIndex(chat => chat.id === chatId)
+            if (chatIndex !== -1) {
+                chatsList.value[chatIndex] = {
+                    ...chatsList.value[chatIndex],
+                    last_message: e.message.message_text
+                }
+            }
+        })
+
+    // Підписка на видалення повідомлень
+    window.Echo.private(`MessageDeleteChannel.${chatId}`)
+        .listen('MessageDelete', e => {
+            const index = messagesList.value.findIndex(msg => msg.id === e.message_id)
+            if (index !== -1) messagesList.value.splice(index, 1)
+        })
+
+    // Підписка на редагування повідомлень
+    window.Echo.private(`MessageEditChannel.${chatId}`)
+        .listen('MessageEdit', e => {
+            const index = messagesList.value.findIndex(msg => msg.id === e.message.id)
+            if (index !== -1) messagesList.value[index].message_text = e.message.message_text
+        })
+
+    // Очищення сповіщень
+    notificationsList.value = notificationsList.value.filter(n => n.chat_id !== chatId)
+}
+
+
+watch(() => props.chat_id, (newChatId, oldChatId) => {
+    if (oldChatId) {
+        window.Echo.leave(`private-Chat.${oldChatId}`)
+        window.Echo.leave(`private-MessageDeleteChannel.${oldChatId}`)
+        window.Echo.leave(`private-MessageEditChannel.${oldChatId}`)
+    }
+
+    if (newChatId) {
+        subscribeToChatChannels(newChatId)
+    }
+})
+
+
 
 onUnmounted(() => window.removeEventListener('resize', handleResize))
 
@@ -184,14 +247,6 @@ const handleClickOutside = (event) => {
     }
 }
 
-onMounted(() => {
-    document.addEventListener('click', handleClickOutside)
-})
-
-onUnmounted(() => {
-    document.removeEventListener('click', handleClickOutside)
-})
-
 const handleGlobalClick = (e) => {
     const menu = document.querySelector('.context-menu')
     if (menu && !menu.contains(e.target)) {
@@ -201,10 +256,13 @@ const handleGlobalClick = (e) => {
 
 onMounted(() => {
     document.addEventListener('click', handleGlobalClick)
+    document.addEventListener('click', handleClickOutside)
+
 })
 
 onUnmounted(() => {
     document.removeEventListener('click', handleGlobalClick)
+    document.removeEventListener('click', handleClickOutside)
 })
 
 
@@ -255,10 +313,15 @@ const submitEdit = () => {
     })
 }
 
-watch(() => props.chat_id, (newMessages) => {
-    messagesList.value = [...newMessages]
-    nextTick(() => scrollToBottom('auto'))
+watch(() => props.chat_id, (newChatId) => {
+    if (newChatId && Array.isArray(props.messages)) {
+        messagesList.value = [...props.messages]
+        nextTick(() => scrollToBottom('auto'))
+    } else {
+        messagesList.value = []
+    }
 })
+
 </script>
 
 <template>
@@ -288,8 +351,8 @@ watch(() => props.chat_id, (newMessages) => {
                 <input
                     v-model="searchButtonText"
                     @focus="searchButtonActivity = true"
-                    class="w-full border-zinc-700 text-purple-300 bg-zinc-900 h-10 py-2 px-3 leading-5 border rounded-2xl focus:outline-none focus:ring-0"
-                    placeholder="Enter a username for search him"
+                    class="w-full border-zinc-700 text-purple-300 bg-zinc-900 h-10 py-2 px-3 leading-5 border rounded-2xl focus:outline-none text-center focus:ring-0"
+                    placeholder="Введіть ім'я користувача"
                 />
             </div>
 
@@ -312,10 +375,12 @@ watch(() => props.chat_id, (newMessages) => {
                         :is_active_chat="chat.id === props.chat_id"
                         :last_message="chat.last_message"
                         :chat_id="chat.id"
+                        :current_chat_id="chat_id"
                         :notifications="notificationsList"
                         :opened_id="contextMenu.id"
                         :opened_type="contextMenu.type"
                         :menu_position="contextMenu.position"
+                        :is_online="getDirectChatIsOnline(chat)"
                         @open="(id, pos) => openContextMenu('chat', id, pos)"
                         @close="closeContextMenu"
                     />
@@ -356,7 +421,6 @@ watch(() => props.chat_id, (newMessages) => {
                     </div>
                 </Transition>
 
-
             </div>
         </div>
 
@@ -371,6 +435,8 @@ watch(() => props.chat_id, (newMessages) => {
                     @load="scrollToBottom('auto')"
                     :name="getUserName(message.user_id)"
                     :message_text="message.message_text"
+                    :message_owner_id="message.user_id"
+                    :current_user_id="current_user.id"
                     :upload_time="formatTime(message.created_at)"
                     :my_message="message.user_id === current_user.id"
                     :opened_id="contextMenu.id"
@@ -384,11 +450,11 @@ watch(() => props.chat_id, (newMessages) => {
 
             <div v-else-if="messagesList && props.chat_id"
                  class="flex flex-1 flex-col p-3 full justify-center items-center">
-                <p class="text-4xl text-purple-300">Send your first message</p>
+                <p class="text-4xl text-purple-300 select-none">Відправте ваше перше повідомлення</p>
             </div>
 
             <div v-else class="flex flex-1 full items-center justify-center">
-                <div class="text-4xl text-purple-300">Start or select any chat</div>
+                <div class="text-4xl text-purple-300 select-none">Оберіть або почніть новий чат</div>
             </div>
 
             <SendMessageInput
@@ -401,7 +467,7 @@ watch(() => props.chat_id, (newMessages) => {
                 <form @submit.prevent="submitEdit">
         <textarea
             v-model="messageBeingEdited.text"
-            class="w-full h-24 p-2 border rounded bg-zinc-800 text-white resize-none"
+            class="w-full h-24 p-2 border rounded bg-zinc-800 text-white resize-none focus:outline-none outline-none focus:ring-0 ring-0 border-transparent focus:border-transparent"
         ></textarea>
                     <div class="flex justify-end gap-2 mt-2">
                         <button

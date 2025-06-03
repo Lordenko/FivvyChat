@@ -17,7 +17,18 @@ class AuthController extends Controller
             'email' => ['required', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'confirmed', 'min:5'],
             'agree' => ['accepted']
+        ], [
+            'name.required' => 'Ім’я обовʼязкове.',
+            'name.unique' => 'Таке ім’я вже існує.',
+            'email.required' => 'E-mail обовʼязковий.',
+            'email.email' => 'Введіть коректний e-mail.',
+            'email.unique' => 'Цей e-mail вже зареєстровано.',
+            'password.required' => 'Пароль обовʼязковий.',
+            'password.confirmed' => 'Паролі не збігаються.',
+            'password.min' => 'Пароль має містити щонайменше 5 символів.',
+            'agree.accepted' => 'Ви повинні прийняти умови.',
         ]);
+
 
         $user = User::create($fields);
 
@@ -33,7 +44,11 @@ class AuthController extends Controller
         $fields = $request->validate([
             'name' => ['required', 'max:255'],
             'password' => ['required'],
+        ], [
+            'name.required' => 'Ім’я обовʼязкове.',
+            'password.required' => 'Пароль обовʼязковий.',
         ]);
+
 
         if (Auth::attempt($fields, $request->remember)) {
             $request->session()->regenerate();
@@ -41,8 +56,8 @@ class AuthController extends Controller
         }
 
         return redirect()->back()->withErrors([
-            'name' => 'Data is not match!',
-            'password' => 'Data is not match!'
+            'name' => 'Дані не збігаються!',
+            'password' => 'Дані не збігаються!'
         ])->onlyInput('name');
     }
 

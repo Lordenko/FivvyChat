@@ -1,7 +1,7 @@
 <script setup>
-import { router } from '@inertiajs/vue3'
+import { Link } from '@inertiajs/vue3'
 
-defineProps({
+const props = defineProps({
     data: {
         type: Object,
         required: true
@@ -13,18 +13,37 @@ defineProps({
     current_user: {
         type: Object,
         required: true
+    },
+    is_online: {
+        type: Boolean,
+        default: false
     }
 })
 </script>
 
 <template>
     <Link
+        v-if="user.id !== current_user.id"
         :href="route('chats.store')"
         method="post"
         :data="data"
         as="button"
-        v-if="user.id !== current_user.id"
+        class="flex flex-row bg-zinc-800 text-white p-3 w-full text-left hover:bg-zinc-700 hover:cursor-pointer rounded-lg"
     >
-        {{ user.name }}
+        <div class="relative w-[60px] h-[60px]">
+            <img :src="`/storage/${user.avatar_path}`" alt="User Avatar" class="w-full h-full rounded-full object-cover" />
+
+            <span
+                v-if="is_online"
+                class="absolute bottom-0 right-0 w-[14px] h-[14px] bg-green-500 border-[2px] border-zinc-800 rounded-full"
+            ></span>
+        </div>
+
+        <div class="ml-3 w-0 flex-1">
+            <p class="text-[20px] text-white mb-1">{{ user.name }}</p>
+            <p class="text-[15px] text-gray-300 truncate w-full block">
+                Натисни, щоб створити чат
+            </p>
+        </div>
     </Link>
 </template>

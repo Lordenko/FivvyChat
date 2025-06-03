@@ -17,7 +17,7 @@ const isProcessing = ref(false)
         @click="$emit('update:isOpen', !isOpen)"
         class="w-full bg-zinc-800 select-none py-4 rounded-[20px] text-white flex items-center justify-center border border-zinc-700 transition hover:bg-purple-700 hover:cursor-pointer"
     >
-        Profile
+        Профіль
     </button>
 </template>
 

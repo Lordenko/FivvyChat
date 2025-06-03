@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\Chat\MessageSent;
 use App\Events\ChatCreate;
+use App\Events\ChatDelete;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Chat;
@@ -108,7 +108,20 @@ class ChatController extends Controller
      */
     public function destroy(string $id)
     {
-        Chat::find($id)->delete();
-        return redirect()->intended(route('home'));
+        $chat = Chat::find($id);
+
+
+        foreach ($chat->users as $user) {
+            event(
+                new ChatDelete(
+                    $chat, $user->id
+                )
+            );
+        }
+
+
+        $chat->delete();
+
+        return redirect()->route('home');
     }
 }

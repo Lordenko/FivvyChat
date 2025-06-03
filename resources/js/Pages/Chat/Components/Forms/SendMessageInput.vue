@@ -50,7 +50,7 @@ const submit = () => {
                 ref="messageInput"
                 class="bg-zinc-900 border-zinc-700 text-purple-300 w-full h-[50px] p-2 rounded-2xl border focus:outline-none focus:ring-0"
                 type="text"
-                :placeholder="form.processing ? `Sending message...` : `Enter a message...`"
+                :placeholder="form.processing ? `Відправка повідолмення...` : `Введіть повідомлення...`"
             />
 
             <button

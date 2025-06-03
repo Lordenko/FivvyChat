@@ -25,17 +25,16 @@ const submit = () => {
 
     <Head title="Login" />
 
-    <h2 class="text-2xl font-bold text-purple-300 mb-6 text-center">Sign In</h2>
+    <h2 class="text-2xl font-bold text-purple-300 mb-6 text-center">Вхід</h2>
 
     <form @submit.prevent="submit" class='space-y-4'>
 
-        <TextInput name="Name" v-model="form.name" :message="form.errors.name" />
+        <TextInput name="Ім'я" v-model="form.name" :message="form.errors.name" />
 
-        <TextInput name="Password" type="password" v-model="form.password" :message="form.errors.password" />
+        <TextInput name="Пароль" type="password" v-model="form.password" :message="form.errors.password" />
 
         <div class="flex items-center justify-between my-5">
-            <CheckBox name="Remember me?" v-model="form.remember" />
-            <a href="#" class="text-sm text-purple-400 hover:text-purple-300">Forgot password?</a>
+            <CheckBox name="Запам'ятати мене?" v-model="form.remember" />
         </div>
 
 
@@ -44,13 +43,13 @@ const submit = () => {
             :class="{ '!bg-zinc-600': form.processing }"
             class="w-full bg-purple-800 hover:bg-purple-900 text-white font-medium py-2.5 rounded-lg transition-colors"
         >
-            Sign In
+            Увійти
         </button>
     </form>
 
 
     <div class="mt-6 text-center text-sm text-zinc-400">
-        Don't have an account?
-        <Link :href="route('register')" class="text-purple-400 hover:text-purple-300 font-medium">Sign up</Link>
+        Не маєте обліковий запис?
+        <Link :href="route('register')" class="text-purple-400 hover:text-purple-300 font-medium">Зареєструватися</Link>
     </div>
 </template>

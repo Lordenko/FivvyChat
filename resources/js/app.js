@@ -7,7 +7,12 @@ import { createInertiaApp, Head, Link, router } from '@inertiajs/vue3'
 import { ZiggyVue } from '../../vendor/tightenco/ziggy'
 import Layout from './Layouts/Layout.vue'
 import NProgress from 'nprogress'
+import { createPinia } from 'pinia'
 
+// Hide default right mouse key
+document.addEventListener('contextmenu', (e) => e.preventDefault())
+
+const pinia = createPinia()
 
 createInertiaApp({
     title: (title) => `My App - ${title}`,
@@ -21,6 +26,7 @@ createInertiaApp({
         createApp({ render: () => h(App, props) })
             .use(plugin)
             .use(ZiggyVue)
+            .use(pinia)
             .component('Head', Head)
             .component('Link', Link)
             .mount(el)
@@ -28,26 +34,28 @@ createInertiaApp({
     progress: false,
 })
 
-let showingProgress = false
+// let showingProgress = false
+//
+// NProgress.configure({
+//     showSpinner: true,     // Прибрати кружечок праворуч
+//     trickleSpeed: 300,      // Швидкість поступового прогресу (ms)
+//     minimum: 0.01,           // Мінімальна початкова довжина (0.1 = 10%)
+//     easing: 'ease',         // CSS easing
+//     speed: 100              // Тривалість анімації закінчення (ms)
+// })
+//
+// router.on('start', (event) => {
+//     if (!event.detail.visit.data?.skipProgress) {
+//         showingProgress = true
+//         NProgress.start()
+//     }
+// })
+//
+// router.on('finish', () => {
+//     if (showingProgress) {
+//         NProgress.done()
+//         showingProgress = false
+//     }
+// })
 
-NProgress.configure({
-    showSpinner: true,     // Прибрати кружечок праворуч
-    trickleSpeed: 300,      // Швидкість поступового прогресу (ms)
-    minimum: 0.01,           // Мінімальна початкова довжина (0.1 = 10%)
-    easing: 'ease',         // CSS easing
-    speed: 100              // Тривалість анімації закінчення (ms)
-})
 
-router.on('start', (event) => {
-    if (!event.detail.visit.data?.skipProgress) {
-        showingProgress = true
-        NProgress.start()
-    }
-})
-
-router.on('finish', () => {
-    if (showingProgress) {
-        NProgress.done()
-        showingProgress = false
-    }
-})

@@ -1,5 +1,6 @@
 <?php
 
+use App\Broadcasting\ChatDeleteChannel;
 use App\Broadcasting\MessageDeleteChannel;
 use App\Broadcasting\MessageEditChannel;
 use App\Broadcasting\MessageSentChannel;
@@ -10,9 +11,13 @@ use Illuminate\Support\Facades\Broadcast;
 use App\Models\User;
 
 // Global
+Broadcast::channel('Presence.users', function ($user) {
+    return ['id' => $user->id, 'name' => $user->name];
+});
 
 // To one user
 Broadcast::channel('NewChat.{user_id}', ChatCreateChannel::class);
+Broadcast::channel('ChatDeleteChannel.{user_id}', ChatDeleteChannel::class);
 Broadcast::channel('Notification.{user_id}', NotificationSentChannel::class);
 Broadcast::channel('ProfileChangeChannel.{user_id}', ProfileChangeChannel::class);
 
