@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageDelete;
+use App\Events\MessageEdit;
 use App\Events\MessageSent;
 use App\Events\NotificationSent;
 use App\Models\Chat;
@@ -101,7 +103,26 @@ class MessageController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        //
+        $request->validate([
+            'message_text' => 'required|string|max:1000',
+        ]);
+
+        $message = Message::findOrFail($id);
+
+        if ($request->user()->id !== $message->user_id) {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+
+        $message->message_text = $request->message_text;
+        $message->save();
+
+        event(new MessageEdit(
+            $message,
+            $message->chat_id,
+            $message->user_id
+        ));
+
+        return redirect()->back();
     }
 
     /**
@@ -109,6 +130,24 @@ class MessageController extends Controller
      */
     public function destroy(string $id)
     {
-        //
+        $message = Message::findOrFail($id);
+
+        if (auth()->id() !== $message->user_id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        try {
+            $message->delete();
+        } catch (\Exception $exception) {
+            return response()->json(['error' => $exception->getMessage()], 500);
+        }
+
+        event(new MessageDelete(
+            $message,
+            $message->chat_id,
+            $message->user_id
+        ));
+
+        return redirect()->back();
     }
 }

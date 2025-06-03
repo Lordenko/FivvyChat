@@ -138,7 +138,9 @@ onMounted(() => {
 
     window.Echo.private(`Notification.${current_user.value.id}`)
         .listen('NotificationSent', e => {
-            notificationsList.value.push(e.notification)
+            if (props.chat_id !== e.notification.chat_id) {
+                notificationsList.value.push(e.notification)
+            }
 
             const chatIndex = chatsList.value.findIndex(chat => chat.id === e.message.chat_id)
             if (chatIndex !== -1) {
@@ -153,6 +155,18 @@ onMounted(() => {
         .listen('ProfileChange', e => {
             current_user.value = usePage().props.auth?.user
 
+        })
+
+    window.Echo.private(`MessageDeleteChannel.${props.chat_id}`)
+        .listen('MessageDelete', e => {
+            const index_message = messagesList.value.findIndex(item => item.id === e.message_id)
+            messagesList.value.splice(index_message, 1)
+        })
+
+    window.Echo.private(`MessageEditChannel.${props.chat_id}`)
+        .listen('MessageEdit', e => {
+            const index_message = messagesList.value.findIndex(item => item.id === e.message.id)
+            messagesList.value[index_message].message_text = e.message.message_text
         })
 })
 
@@ -178,11 +192,77 @@ onUnmounted(() => {
     document.removeEventListener('click', handleClickOutside)
 })
 
+const handleGlobalClick = (e) => {
+    const menu = document.querySelector('.context-menu')
+    if (menu && !menu.contains(e.target)) {
+        closeContextMenu()
+    }
+}
+
+onMounted(() => {
+    document.addEventListener('click', handleGlobalClick)
+})
+
+onUnmounted(() => {
+    document.removeEventListener('click', handleGlobalClick)
+})
+
+
+const contextMenu = ref({
+    type: null, // 'chat' | 'message' | null
+    id: null,
+    position: {x: 0, y: 0}
+})
+
+// Функція для відкриття меню
+const openContextMenu = (type, id, position) => {
+    contextMenu.value = {
+        type,
+        id,
+        position
+    }
+}
+
+// Функція для закриття меню
+const closeContextMenu = () => {
+    contextMenu.value = {
+        type: null,
+        id: null,
+        position: {x: 0, y: 0}
+    }
+}
+
+const isMessageEdit = ref(false)
+const messageBeingEdited = ref({id: null, text: ''})
+
+const startEditMessage = (id, text) => {
+    isMessageEdit.value = true
+    messageBeingEdited.value = {id, text}
+    closeContextMenu()
+}
+
+const submitEdit = () => {
+    if (!messageBeingEdited.value.text.trim()) return
+
+    router.put(`/messages/${messageBeingEdited.value.id}`, {
+        message_text: messageBeingEdited.value.text
+    }, {
+        preserveScroll: true,
+        onSuccess: () => {
+            isMessageEdit.value = false
+            messageBeingEdited.value = { id: null, text: '' }
+        }
+    })
+}
+
+watch(() => props.chat_id, (newMessages) => {
+    messagesList.value = [...newMessages]
+    nextTick(() => scrollToBottom('auto'))
+})
 </script>
 
 <template>
     <Head title="Chat"/>
-
 
     <Profile v-if="isOpenProfile" v-model:user="current_user" v-model:isOpen="isOpenProfile"/>
 
@@ -220,21 +300,24 @@ onUnmounted(() => {
                                   :user="user"
                                   :current_user="current_user"
                                   v-if="user.id !== current_user.id"
-                                  @click="() => { searchButtonActivity = false; searchButtonText = null; }" />
+                                  @click="() => { searchButtonActivity = false; searchButtonText = null; }"/>
                     </div>
                 </div>
                 <div v-else>
                     <ChatCard
                         v-for="chat in chatsList" :key="chat.id"
-                        @click="() => { console.log(chat.last_message) }"
                         :name="getChatName(chat)"
                         :href_chat_id="`/chat/${chat.id}`"
                         :avatar_path="getAvatarGroup(chat)"
-                        :isAsideOpen="!isChatMenuOpen"
                         :is_active_chat="chat.id === props.chat_id"
                         :last_message="chat.last_message"
                         :chat_id="chat.id"
                         :notifications="notificationsList"
+                        :opened_id="contextMenu.id"
+                        :opened_type="contextMenu.type"
+                        :menu_position="contextMenu.position"
+                        @open="(id, pos) => openContextMenu('chat', id, pos)"
+                        @close="closeContextMenu"
                     />
                 </div>
             </div>
@@ -247,7 +330,8 @@ onUnmounted(() => {
                     class="flex-shrink-0 flex items-center justify-between px-4 py-4 h-[60px] text-zinc-400 text-sm border-t border-zinc-700 hover:bg-zinc-700/50 cursor-pointer transition"
                 >
                     <div class="flex items-center gap-2">
-                        <img :src="`/storage/${current_user.avatar_path}`" alt="Avatar" class="w-6 h-6 rounded-full select-none"/>
+                        <img :src="`/storage/${current_user.avatar_path}`" alt="Avatar"
+                             class="w-6 h-6 rounded-full select-none"/>
                         <p class="font-medium text-white truncate max-w-[120px]">{{ current_user.name }}</p>
                     </div>
                     <div class="text-xl transform transition-transform duration-200"
@@ -282,16 +366,24 @@ onUnmounted(() => {
                 <Message
                     v-for="message in messagesList"
                     :key="message.id"
+                    :message_id="message.id"
                     :avatar_path="getUserAvatarPath(message.user_id)"
+                    @load="scrollToBottom('auto')"
                     :name="getUserName(message.user_id)"
                     :message_text="message.message_text"
                     :upload_time="formatTime(message.created_at)"
                     :my_message="message.user_id === current_user.id"
-                    @load="scrollToBottom('auto')"
+                    :opened_id="contextMenu.id"
+                    :opened_type="contextMenu.type"
+                    :menu_position="contextMenu.position"
+                    @edit="startEditMessage"
+                    @open="(id, pos) => openContextMenu('message', id, pos)"
+                    @close="closeContextMenu"
                 />
             </div>
 
-            <div v-else-if="messagesList && isChatMenuOpen" class="flex flex-1 flex-col p-3 full justify-center items-center">
+            <div v-else-if="messagesList && props.chat_id"
+                 class="flex flex-1 flex-col p-3 full justify-center items-center">
                 <p class="text-4xl text-purple-300">Send your first message</p>
             </div>
 
@@ -300,10 +392,33 @@ onUnmounted(() => {
             </div>
 
             <SendMessageInput
-                v-if="messagesList && props.chat_id"
+                v-if="messagesList && props.chat_id && !isMessageEdit"
                 :user_id="current_user.id"
                 :chat_id="props.chat_id"
             />
+
+            <div v-else-if="messagesList && props.chat_id && isMessageEdit" class="p-3">
+                <form @submit.prevent="submitEdit">
+        <textarea
+            v-model="messageBeingEdited.text"
+            class="w-full h-24 p-2 border rounded bg-zinc-800 text-white resize-none"
+        ></textarea>
+                    <div class="flex justify-end gap-2 mt-2">
+                        <button
+                            type="button"
+                            @click="isMessageEdit = false"
+                            class="px-3 py-1 text-white bg-zinc-700 rounded hover:bg-zinc-600"
+                        >Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            class="px-3 py-1 text-white bg-purple-700 rounded hover:bg-purple-600"
+                        >Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+
         </div>
 
     </div>
