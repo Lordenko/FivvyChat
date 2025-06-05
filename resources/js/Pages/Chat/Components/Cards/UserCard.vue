@@ -1,5 +1,6 @@
 <script setup>
-import { Link } from '@inertiajs/vue3'
+import {Link, router} from '@inertiajs/vue3'
+import axios from 'axios'
 
 const props = defineProps({
     data: {
@@ -19,15 +20,26 @@ const props = defineProps({
         default: false
     }
 })
+
+const createChat = async () => {
+    try {
+        const res = await axios.post(route('chats.store'), {
+            user_ids: props.data.user_ids,
+            type: props.data.type
+        })
+        const chatId = res.data.chat_id
+        router.visit(route('chat.show', chatId))
+    } catch (err) {
+        console.log(err)
+    }
+}
+
 </script>
 
 <template>
-    <Link
+    <button
         v-if="user.id !== current_user.id"
-        :href="route('chats.store')"
-        method="post"
-        :data="data"
-        as="button"
+        @click="createChat()"
         class="flex flex-row bg-zinc-800 text-white p-3 w-full text-left hover:bg-zinc-700 hover:cursor-pointer rounded-lg"
     >
         <div class="relative w-[60px] h-[60px]">
@@ -45,5 +57,5 @@ const props = defineProps({
                 Натисни, щоб створити чат
             </p>
         </div>
-    </Link>
+    </button>
 </template>

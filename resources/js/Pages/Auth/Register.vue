@@ -51,7 +51,7 @@ const submit = () => {
             :class="{ '!bg-zinc-600': form.processing }"
             class="w-full bg-purple-800 hover:bg-purple-900 text-white font-medium py-2.5 rounded-lg transition-colors"
         >
-            Sign Up
+            Зареєструватися
         </button>
     </form>
 

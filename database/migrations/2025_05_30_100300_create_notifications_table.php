@@ -13,7 +13,7 @@ return new class extends Migration {
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('chat_id')->constrained()->onDelete('cascade');
-            $table->string('message');
+            $table->text('message');
             $table->boolean('is_read')->default(false); // можеш прибрати, якщо відслідковується по user
             $table->timestamps();
         });

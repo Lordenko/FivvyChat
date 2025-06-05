@@ -107,6 +107,8 @@ watch(isChatMenuOpen, val => {
 })
 
 onMounted(() => {
+    console.log(`chatid - ${props.chat_id}`)
+
     handleResize()
     window.addEventListener('resize', handleResize)
 
@@ -231,9 +233,10 @@ watch(() => props.chat_id, (newChatId, oldChatId) => {
     }
 })
 
-
-
-onUnmounted(() => window.removeEventListener('resize', handleResize))
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize)
+    console.log(`onUnmounted chatid - ${props.chat_id}`)
+})
 
 const settingsRef = ref(null)
 const settingsButtonRef = ref(null)
@@ -474,19 +477,17 @@ watch(() => props.chat_id, (newChatId) => {
                             type="button"
                             @click="isMessageEdit = false"
                             class="px-3 py-1 text-white bg-zinc-700 rounded hover:bg-zinc-600"
-                        >Cancel
+                        >Відмінити
                         </button>
                         <button
                             type="submit"
                             class="px-3 py-1 text-white bg-purple-700 rounded hover:bg-purple-600"
-                        >Save
+                        >Зберегти
                         </button>
                     </div>
                 </form>
             </div>
-
         </div>
-
     </div>
 </template>
 

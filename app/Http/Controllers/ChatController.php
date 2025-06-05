@@ -61,7 +61,10 @@ class ChatController extends Controller
             ->firstWhere('users_count', $user_ids->count());
 
         if ($existingChat) {
-            return redirect()->route('chat.show', $existingChat);
+
+            return response()->json([
+                'chat_id' => $existingChat->id,
+            ]);
         }
 
         $chat = Chat::create([
@@ -73,7 +76,9 @@ class ChatController extends Controller
             event(new ChatCreate($chat, $user));
         }
 
-        return redirect()->route('chat.show', $chat->id);
+        return response()->json([
+            'chat_id' => $chat->id,
+        ]);
     }
 
 
