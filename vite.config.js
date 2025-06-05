@@ -9,7 +9,7 @@ export default defineConfig({
         port: 5173,
         cors: true,
         hmr: {
-            host: '46.219.25.253', // або ваша локальна IP-адреса
+            host: '0.0.0.0',
         },
     },
     plugins: [
